@@ -5,11 +5,10 @@ import queue
 
 # This is a 'queue' to hold the audio data
 q = queue.Queue()
-
 def callback(indata, frames, time, status):
     q.put(bytes(indata))
 
-# 1. Load the model from your D: drive folder
+# 1. Load the model 
 model = vosk.Model("model")
 rec = vosk.KaldiRecognizer(model, 16000)
 
