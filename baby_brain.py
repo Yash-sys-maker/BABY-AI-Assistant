@@ -11,15 +11,17 @@ import ollama
 
 pygame.mixer.init()
 
-# ==========================================
-# 1. THE MOUTH (Edge-TTS with Barge-in)
-# ==========================================
+
+# 1. THE MOUTH 
+
 async def generate_audio(text, filename):
     voice = "en-IN-NeerjaNeural"
+    
     communicate = edge_tts.Communicate(text, voice)
     await communicate.save(filename)
 
 def speak(text):
+    
     print(f"BABY: {text}")
     filename = f"temp_{int(time.time())}.mp3"
     
@@ -28,28 +30,26 @@ def speak(text):
     pygame.mixer.music.load(filename)
     pygame.mixer.music.play()
     
-    # Empty the ear queue right before she talks so old noise doesn't trigger an interrupt
     with q.mutex:
         q.queue.clear()
         
-    # THE NEW BARGE-IN LOOP
+    
     while pygame.mixer.music.get_busy():
         try:
-            # While audio is playing, instantly check if you are talking
+           
             data = q.get_nowait()
             if rec.AcceptWaveform(data):
                 result = json.loads(rec.Result())
                 interrupt_text = result['text']
                 
-                # If she hears you say a real word, she kills her own audio
                 if interrupt_text != "" and len(interrupt_text) > 3:
                     print(f"\n[INTERRUPTED!] Heard: {interrupt_text}")
                     pygame.mixer.music.stop() # Instantly shut her mouth
                     break # Break out of the loop and go back to listening
         except queue.Empty:
-            pass # If you aren't talking, just keep playing the audio
+            pass # If I am not talking, just keep playing the audio
             
-        time.sleep(0.01) # Check your mic 100 times a second
+        time.sleep(0.01) # Check my mic 100 times a second
         
     pygame.mixer.music.unload()
     try:
@@ -57,9 +57,9 @@ def speak(text):
     except:
         pass
 
-# ==========================================
+
 # 2. THE BRAIN (Ollama)
-# ==========================================
+
 def think(user_input):
     print("...BABY is thinking...")
     response = ollama.chat(model='llama3.2', messages=[
@@ -74,22 +74,19 @@ def think(user_input):
     ])
     return response['message']['content']
 
-# ==========================================
 # 3. THE EARS (VOSK)
-# ==========================================
+
 q = queue.Queue()
 
 def callback(indata, frames, time, status):
-    # Ears are now ALWAYS ON. No more blocking.
+    # Ears are now ALWAYS ON. 
     q.put(bytes(indata))
 
-# ---> THE MISSING EARS ARE BACK <---
 model = vosk.Model("model")
 rec = vosk.KaldiRecognizer(model, 16000)
 
-# ==========================================
 # 4. THE MAIN LOOP
-# ==========================================
+
 with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype='int16',
                        channels=1, callback=callback):
     
