@@ -1,0 +1,12 @@
+# Ignore the Python virtual environment
+baby_env/
+
+# Ignore the massive Vosk ear models
+model/
+
+# Ignore temporary audio files
+*.mp3
+*.wav
+
+# Ignore Python cache
+__pycache__/
