@@ -5,6 +5,7 @@ import pygame
 import time
 import ollama
 import webbrowser
+import pywhatkit
 pygame.mixer.init()
 
 
@@ -69,27 +70,44 @@ def think(user_input):
 # New : Accessing browser
 
 
-# NEW SECTION: PHYSICAL SKILLS
 
 def use_skills(text):
     text = text.lower() 
     
-    # 1. The Web Surfer Skill
-    if "open youtube" in text:
+    # 1.  YouTube Playback
+    if "play " in text and " on youtube" in text:
+        song = text.replace("play ", "").replace(" on youtube", "").strip()
+        pywhatkit.playonyt(song)
+        return f"Playing {song} on YouTube right now."
+        
+    # 2.  YouTube Search
+    elif "search " in text and " on youtube" in text:
+        query = text.replace("search ", "").replace(" on youtube", "").strip()
+        # URLs use "+" instead of spaces, so we format the query for the browser
+        search_url = query.replace(" ", "+")
+        webbrowser.open(f"https://www.youtube.com/results?search_query={search_url}")
+        return f"Searching YouTube for {query}."
+        
+    # 3.  Google Search
+    elif "search " in text and " on google" in text:
+        query = text.replace("search ", "").replace(" on google", "").strip()
+        webbrowser.open(f"https://www.google.com/search?q={query}")
+        return f"Searching Google for {query}."
+        
+    # 4. Basic Opens 
+    elif "open youtube" in text:
         webbrowser.open("https://www.youtube.com")
-        return "Opening YouTube right now."
+        return "Opening the YouTube homepage."
         
     elif "open google" in text:
         webbrowser.open("https://www.google.com")
-        return "Opening Google."
+        return "Opening the Google homepage."
         
     elif "open github" in text:
         webbrowser.open("https://github.com")
         return "Opening your GitHub workspace."
         
-    # If no physical commands were found, return None so her brain takes over
     return None
-
 
 # 3. TEXT MODE MAIN LOOP 
 
