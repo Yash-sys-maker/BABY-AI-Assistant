@@ -1,7 +1,3 @@
-import vosk
-import sounddevice as sd
-import queue
-import json
 import os
 import asyncio
 import edge_tts
@@ -11,9 +7,9 @@ import ollama
 
 pygame.mixer.init()
 
-# ==========================================
-# 1. THE MOUTH (Edge-TTS with Barge-in)
-# ==========================================
+
+# 1. THE MOUTH 
+
 async def generate_audio(text, filename):
     voice = "en-IN-NeerjaNeural"
     communicate = edge_tts.Communicate(text, voice)
@@ -28,24 +24,16 @@ def speak(text):
     pygame.mixer.music.load(filename)
     pygame.mixer.music.play()
     
-    with q.mutex:
-        q.queue.clear()
-        
-    while pygame.mixer.music.get_busy():
-        try:
-            data = q.get_nowait()
-            if rec.AcceptWaveform(data):
-                result = json.loads(rec.Result())
-                interrupt_text = result['text']
-                
-                if interrupt_text != "" and len(interrupt_text) > 3:
-                    print(f"\n[INTERRUPTED!] Heard: {interrupt_text}")
-                    pygame.mixer.music.stop() 
-                    break 
-        except queue.Empty:
-            pass 
-            
-        time.sleep(0.01) 
+    print("   -> [Press Ctrl+C to instantly stop her yapping] <-")
+    
+    # NEW: The Killswitch logic
+    try:
+        while pygame.mixer.music.get_busy():
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        pygame.mixer.music.stop() # to stop her yapping immediately
+        print("\n[skipped!]")
+        time.sleep(0.2) 
         
     pygame.mixer.music.unload()
     try:
@@ -53,20 +41,17 @@ def speak(text):
     except:
         pass
 
-# ==========================================
-# 2. THE BRAIN (Ollama with Memory)
-# ==========================================
-# ---> THIS IS THE MEMORY BANK THAT WAS MISSING! <---
+# 2. THE BRAIN 
+
 chat_history = [
     {
         'role': 'system',
-        'content': 'You are BABY, a highly intelligent and helpful personal AI assistant. Keep your spoken answers very concise, conversational, and short (1 to 2 sentences max).'
+        'content': 'You are BABY, a highly intelligent personal AI assistant. Give very smart but VERY SHORT answers (1 to 2 sentences maximum). If the user needs more details, they will explicitly ask you to elaborate.'
     }
 ]
-
 def think(user_input):
     global chat_history
-    print("...BABY is thinking...")
+    print(" Wait a sec Majesty, Let me Cook")
     
     chat_history.append({'role': 'user', 'content': user_input})
     
@@ -80,38 +65,19 @@ def think(user_input):
         
     return answer
 
-# ==========================================
-# 3. THE EARS (VOSK)
-# ==========================================
-q = queue.Queue()
 
-def callback(indata, frames, time, status):
-    q.put(bytes(indata))
+# 3. TEXT MODE MAIN LOOP 
 
-model = vosk.Model("model")
-rec = vosk.KaldiRecognizer(model, 16000)
+speak("Hello My Majesty! I am your humble assistant, BABY. How may I serve you today?")
 
-# ==========================================
-# 4. THE MAIN LOOP
-# ==========================================
-with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype='int16',
-                       channels=1, callback=callback):
+while True:
+    # NEW: A simple text input box instead of listening to the microphone!
+    user_text = input("\n[Chat] -> ")
     
-    speak("Systems online. The brain is connected. I am ready.")
-    
-    while True:
-        data = q.get()
-        if rec.AcceptWaveform(data):
-            result = json.loads(rec.Result())
-            user_text = result['text']
-            
-            if user_text != "" and len(user_text) > 3:
-                print(f"You said: {user_text}")
-                
-                if "stop" in user_text or "shut down" in user_text:
-                    speak("Understood. Shutting down all systems.")
-                    break
-                
-                else:
-                    smart_reply = think(user_text)
-                    speak(smart_reply)
+    if user_text.strip() != "":
+        if "stop" in user_text.lower() or "shut down" in user_text.lower():
+            speak("Understood My Majesty. Dont forget about me, ok?")
+            break
+        else:
+            smart_reply = think(user_text)
+            speak(smart_reply)
