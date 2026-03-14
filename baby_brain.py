@@ -4,7 +4,7 @@ import edge_tts
 import pygame
 import time
 import ollama
-
+import webbrowser
 pygame.mixer.init()
 
 
@@ -66,18 +66,52 @@ def think(user_input):
     return answer
 
 
+# New : Accessing browser
+
+
+# NEW SECTION: PHYSICAL SKILLS
+
+def use_skills(text):
+    text = text.lower() 
+    
+    # 1. The Web Surfer Skill
+    if "open youtube" in text:
+        webbrowser.open("https://www.youtube.com")
+        return "Opening YouTube right now."
+        
+    elif "open google" in text:
+        webbrowser.open("https://www.google.com")
+        return "Opening Google."
+        
+    elif "open github" in text:
+        webbrowser.open("https://github.com")
+        return "Opening your GitHub workspace."
+        
+    # If no physical commands were found, return None so her brain takes over
+    return None
+
+
 # 3. TEXT MODE MAIN LOOP 
 
-speak("Hello My Majesty! I am your humble assistant, BABY. How may I serve you today?")
+
+speak(" Hello Majesty! I am your BABY, your personal AI assistant. How can I help you today?")
 
 while True:
-    # NEW: A simple text input box instead of listening to the microphone!
-    user_text = input("\n[Chat] -> ")
+    user_text = input("\n[STart your yapp] -> ")
     
     if user_text.strip() != "":
         if "stop" in user_text.lower() or "shut down" in user_text.lower():
-            speak("Understood My Majesty. Dont forget about me, ok?")
+            speak("Goodbye Majesty! If you need me again, just call me up. *wink*")
             break
         else:
-            smart_reply = think(user_text)
-            speak(smart_reply)
+         
+            # First, checking if the user asked her to perform a physical physical
+            skill_response = use_skills(user_text)
+            
+            if skill_response != None:
+                # If she successfully used a skill, just speak the confirmation!
+                speak(skill_response)
+            else:
+                # If it was just a normal question, send it to her LLaMA brain
+                smart_reply = think(user_text)
+                speak(smart_reply)
